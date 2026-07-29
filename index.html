@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Pédagogique de Cryptographie & MITM</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Outfit, Inter & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-active-tab="mitm-pane">
+
+    <!-- Sticky Navigation Wrapper to bind Header and secondary Filter Bars together -->
+    <div class="sticky-nav-wrapper">
+        <!-- Header Navigation Bar -->
+        <header class="app-header">
+            <div class="header-container d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="logo-area" style="flex: 1; min-width: 250px;">
+                    <i class="fa-solid fa-shield-halved logo-icon"></i>
+                    <div class="logo-text">
+                        <h1>Groupe<span class="highlight">Sep7</span></h1>
+                        <p class="subtitle">Plateforme de Simulation MITM : Alice, Bob et Eve</p>
+                    </div>
+                </div>
+
+                <!-- Titre / Bouton central Simulation (Centrado) -->
+                <div class="d-flex justify-content-center align-items-center" style="flex: 1; min-width: 250px;">
+                    <div class="glass-title fw-bold px-4 py-2 d-flex align-items-center" style="font-size: 1.1rem; color: #fff; cursor: default; white-space: nowrap;">
+                        <i class="fa-solid fa-network-wired text-primary me-2"></i> Simulation d'attaque MITM
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-end gap-2" style="flex: 1; min-width: 250px;">
+                    <div class="header-badge d-none d-md-flex">
+                        <span class="badge course-badge"><i class="fa-solid fa-graduation-cap"></i> Labo
+                            Cryptographie</span>
+                        <span class="badge status-badge"><i class="fa-solid fa-circle"></i> Système Actif</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        
+
+        <!-- Sub-header Filter Bar for MITM Simulation -->
+        <div class="mitm-filter-bar-container">
+            <div class="container-fluid px-4 d-flex justify-content-center align-items-center gap-3 flex-wrap">
+                <div class="d-flex flex-wrap align-items-center gap-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 fw-bold text-nowrap text-secondary small text-uppercase"
+                            for="mitm-method">
+                            <i class="fa-solid fa-gears me-1"></i> Méthode :
+                        </label>
+                        <select class="form-select form-select-sm" id="mitm-method"
+                            style="min-width: 170px; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #fff;">
+                            <option value="aes">AES (Symétrique)</option>
+                            <option value="rsa">RSA (Asymétrique)</option>
+                            <option value="sha">SHA-256 (Hachage)</option>
+                            <option value="sig">Signature Numérique</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 fw-bold text-nowrap text-secondary small text-uppercase"
+                            for="mitm-scenario">
+                            <i class="fa-solid fa-route me-1"></i> Scénario :
+                        </label>
+                        <select class="form-select form-select-sm" id="mitm-scenario"
+                            style="min-width: 250px; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #fff;">
+                            <!-- Rempli dynamiquement en JS -->
+                        </select>
+                    </div>
+
+                    <!-- Optionnel AES dynamique -->
+                    <div id="mitm-aes-controls" class="d-flex align-items-center gap-3 d-none">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="mitm-aes-iv-check" checked>
+                            <label class="form-check-label fw-semibold small text-nowrap text-muted"
+                                for="mitm-aes-iv-check">IV / Nonce</label>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="mitm-aes-tag-check" checked>
+                            <label class="form-check-label fw-semibold small text-nowrap text-muted"
+                                for="mitm-aes-tag-check">Tag GCM</label>
+                        </div>
+                    </div>
+
+                    <!-- Optionnel RSA dynamique -->
+                    <div id="mitm-rsa-controls" class="d-flex align-items-center gap-3 d-none">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small text-nowrap text-muted" for="mitm-rsa-size">Clé
+                                :</label>
+                            <select class="form-select form-select-sm py-0" id="mitm-rsa-size"
+                                style="width: 105px; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 0.8rem;">
+                                <option value="1024">1024 bits</option>
+                                <option value="2048" selected>2048 bits</option>
+                                <option value="4096">4096 bits</option>
+                            </select>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="mitm-rsa-auth-check">
+                            <label class="form-check-label fw-semibold small text-nowrap text-muted"
+                                for="mitm-rsa-auth-check">Authentifier</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert message when simulation is running -->
+                <div class="alert alert-warning d-none py-1 px-3 small warning-border-flash mt-2 mb-0"
+                    id="mitm-warning-in-progress" style="margin-left: 20px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Simulation en cours – veuillez réinitialiser pour
+                    changer les filtres.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteneur principal de l'application (SPA) -->
+    <main class="app-container w-100">
+        <div class="tab-content" id="mainTabContent">
+
+            <!-- SECTION : SIMULATION MITM -->
+            <div class="tab-pane fade show active" id="mitm-pane" role="tabpanel" aria-labelledby="mitm-tab" tabindex="0">
+
+
+
+                <!-- Scenario Description Panel (separate container) -->
+                <div class="mitm-description-panel p-3 mb-3" id="mitm-scenario-desc-container">
+                    <div class="small text-muted" id="mitm-scenario-desc" style="font-weight: 500; text-align: left;">
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Visual Flow Animation Column (Full width) -->
+                    <div class="col-12" id="mitm-flow-panel">
+                        <div class="glass-panel p-4">
+                            <h3 class="h4 mb-3"><i class="fa-solid fa-network-wired text-primary me-2"></i>Flux de
+                                Communication</h3>
+
+                            <!-- Panneau de message (Input) -->
+                            <div class="glass-panel-inner p-3 mb-4" id="mitm-input-panel">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label class="form-label fw-bold mb-0 text-primary-custom">
+                                        <i class="fa-solid fa-pen-fancy me-1"></i> Message à envoyer
+                                    </label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="small text-muted">Auteur actuel :</span>
+                                        <span class="badge bg-primary px-3 py-1 text-uppercase"
+                                            id="mitm-input-author-badge"
+                                            style="font-size: 0.75rem; letter-spacing: 0.5px;">Alice</span>
+                                    </div>
+                                </div>
+                                <textarea id="mitm-message-input" class="form-control pulse-call-to-action"
+                                    placeholder="Écrivez votre message ici... (500 caractères max)" maxlength="500"
+                                    rows="1"
+                                    style="resize: none; background: rgba(0,0,0,0.25); color: #fff; font-family: var(--font-ui); transition: all 0.3s ease;"></textarea>
+
+                                <!-- Simulation Action Buttons Banner -->
+                                <div class="mitm-buttons-banner mt-3 d-flex justify-content-end gap-3">
+                                    <button
+                                        class="btn btn-primary d-flex align-items-center justify-content-center px-4 py-2"
+                                        id="mitm-btn-start" style="min-width: 200px;">
+                                        <i class="fa-solid fa-play me-2"></i> Démarrer la communication
+                                    </button>
+                                    <button
+                                        class="btn btn-danger d-flex align-items-center justify-content-center px-4 py-2 text-white"
+                                        id="mitm-btn-stop" disabled style="min-width: 200px;">
+                                        <i class="fa-solid fa-stop me-2"></i> Arrêter la communication
+                                    </button>
+                                    <!-- Hidden reset button to prevent JS errors -->
+                                    <button id="mitm-btn-reset" class="d-none"></button>
+                                </div>
+                            </div>
+
+                            <!-- Rail de transfert de paquets et représentation des acteurs -->
+                            <div class="row text-center mt-3 mb-1 position-relative" id="mitm-actors-row">
+                                <div class="col-4">
+                                    <div class="card bg-dark border border-secondary p-3 h-100 actor-card alice"
+                                        id="card-alice">
+                                        <div class="actor-card-header">
+                                            <div class="fs-1"><i
+                                                    class="fa-solid fa-user-shield text-primary avatar-shadow-default"
+                                                    id="avatar-alice"></i></div>
+                                            <h5 class="mb-1 text-primary">Alice</h5>
+                                            <span class="badge course-badge mb-2" id="role-alice">Émetteur</span>
+                                            <div class="small text-muted" id="state-alice">En attente</div>
+                                        </div>
+
+                                        <!-- Integrated Timeline Node Space -->
+                                        <div class="actor-card-spacing"></div>
+
+                                        <div class="actor-console mt-3" id="console-alice"></div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card bg-dark border border-secondary p-3 h-100 actor-card eve"
+                                        id="card-eve">
+                                        <div class="actor-card-header">
+                                            <div class="fs-1"><i class="fa-solid fa-user-ninja" id="avatar-eve"></i>
+                                            </div>
+                                            <h5 class="mb-1">Eve</h5>
+                                            <span class="badge badge-eve-glass mb-2">Interceptrice (MITM)</span>
+                                            <div class="small text-muted" id="state-eve">En écoute passive</div>
+                                        </div>
+
+                                        <!-- Integrated Timeline Node Space -->
+                                        <div class="actor-card-spacing"></div>
+
+                                        <div class="actor-console mt-3" id="console-eve"></div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card bg-dark border border-secondary p-3 h-100 actor-card bob"
+                                        id="card-bob">
+                                        <div class="actor-card-header">
+                                            <div class="fs-1"><i
+                                                    class="fa-solid fa-user-lock text-primary avatar-shadow-default"
+                                                    id="avatar-bob"></i></div>
+                                            <h5 class="mb-1 text-success">Bob</h5>
+                                            <span class="badge course-badge mb-2" id="role-bob">Destinataire</span>
+                                            <div class="small text-muted" id="state-bob">En attente</div>
+                                        </div>
+
+                                        <!-- Integrated Timeline Node Space -->
+                                        <div class="actor-card-spacing"></div>
+
+                                        <div class="actor-console mt-3" id="console-bob"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Integrated Timeline Animation Track -->
+                                <div class="animation-track-container">
+                                    <div class="connection-line"></div>
+                                    <div class="animation-actor-point point-alice" id="node-alice">
+                                        <i class="fa-solid fa-circle-dot"></i>
+                                    </div>
+                                    <div class="animation-actor-point point-eve" id="node-eve">
+                                        <i class="fa-solid fa-circle-dot"></i>
+                                    </div>
+                                    <div class="animation-actor-point point-bob" id="node-bob">
+                                        <i class="fa-solid fa-circle-dot"></i>
+                                    </div>
+
+                                    <!-- Paquet de données -->
+                                    <div class="data-packet" id="packet">
+                                        <i class="fa-solid fa-envelope"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs de Communication (Horizontal 100%, directly under animation) -->
+                    <div class="row g-4 mb-4" id="mitm-logs-panel">
+                        <div class="col-12">
+                            <div class="glass-panel p-4">
+                                <h3 class="h4 mb-3"><i class="fa-solid fa-terminal text-primary me-2"></i>Logs de Communication</h3>
+                                <div class="terminal-window">
+                                    <div class="terminal-header">
+                                        <div class="terminal-dots me-2">
+                                            <span class="terminal-dot dot-red"></span>
+                                            <span class="terminal-dot dot-yellow"></span>
+                                            <span class="terminal-dot dot-green"></span>
+                                        </div>
+                                        <div class="text-secondary small">console@cryptosim:~</div>
+                                    </div>
+                                    <div class="terminal-body" id="mitm-logs" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column;">
+                                        <div class="log-entry text-start d-flex align-items-baseline mb-2" style="font-family: 'Fira Code', 'Courier New', Courier, monospace; font-size: 0.84rem; line-height: 1.5;">
+                                            <span class="text-muted me-2" style="font-size: 0.76rem;">[16:00:00]</span>
+                                            <span class="text-info me-2 fw-bold" style="text-shadow: 0 0 5px rgba(0, 242, 254, 0.4);">cryptosim@admin:~$</span>
+                                            <span class="me-2 d-inline-flex align-items-center" style="transform: translateY(1.5px);"><i class="fa-solid fa-terminal text-primary"></i></span>
+                                            <span class="text-light">Prêt. Sélectionnez un scénario et cliquez sur "Démarrer la communication".</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button Plus de details / Voir más resultados -->
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <button class="btn btn-outline-info blinking-details-btn px-4 py-2" id="mitm-btn-scroll-details" style="font-family: var(--font-ui); font-weight: 500; font-size: 0.9rem; letter-spacing: 0.5px;">
+                                <i class="fa-solid fa-chevron-down me-2"></i>Voir plus de résultats
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat de Messages & Fiche de résultats dynamiques -->
+                    <div class="row g-4 mb-4" id="chat-fiche-panel">
+                        <!-- Chat des Messages -->
+                        <div class="col-lg-6">
+                            <div class="glass-panel p-4 h-100 d-flex flex-column">
+                                <h3 class="h4 mb-3"><i class="fa-solid fa-comments text-info me-2"></i>Messages</h3>
+                                <div id="chat-messages" class="flex-grow-1 p-3 bg-dark rounded border border-secondary" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                                    <div class="text-center text-muted small w-100 my-auto" id="chat-placeholder">
+                                        <i class="fa-regular fa-message fa-2x mb-2 opacity-50"></i><br>
+                                        Aucun message. Démarrez la simulation.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fiche de résultats dynamiques -->
+                        <div class="col-lg-6">
+                            <div class="glass-panel p-4 h-100 fiche-resultat d-flex flex-column">
+                                <div class="fiche-header d-flex justify-content-between align-items-center mb-3">
+                                    <h3 class="h4 mb-0"><i
+                                            class="fa-solid fa-clipboard-list text-primary me-2"></i>Fiche de
+                                        Résultats</h3>
+                                    <span class="risk-badge" id="res-risk">-</span>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-borderless align-middle mb-3">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-secondary py-2" style="width: 45%;">Méthode simulée</td>
+                                                <td class="fw-bold py-2 text-white" id="res-method">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Message intercepté par Eve ?</td>
+                                                <td class="py-2"><span class="badge bg-secondary"
+                                                        id="res-intercept">-</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Algorithme connu par Eve ?</td>
+                                                <td class="py-2"><span class="badge bg-secondary" id="res-algo">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Clé secrète / privée connue par Eve ?
+                                                </td>
+                                                <td class="py-2"><span class="badge bg-secondary" id="res-key">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Eve peut-elle lire le message ?</td>
+                                                <td class="py-2"><span class="badge bg-secondary" id="res-read">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Eve peut-elle déchiffrer le message ?
+                                                </td>
+                                                <td class="py-2"><span class="badge bg-secondary"
+                                                        id="res-decrypt">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Eve peut-elle modifier les données ?
+                                                </td>
+                                                <td class="py-2"><span class="badge bg-secondary"
+                                                        id="res-modify">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-secondary py-2">Modification détectée par Bob/Alice ?
+                                                </td>
+                                                <td class="py-2"><span class="badge bg-secondary"
+                                                        id="res-detect">-</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="justification-box p-3">
+                                    <h5 class="fs-6 fw-bold mb-2 text-primary"><i
+                                            class="fa-solid fa-circle-info me-1"></i>
+                                        Justification Pédagogique</h5>
+                                    <p class="text-light small mb-0" id="res-justification" style="line-height: 1.5;">
+                                        Lancez une simulation pour analyser l'impact du scénario sur la sécurité des communications.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tracé détaillé de l'expérience -->
+                    <div class="row g-4 mb-4" id="experience-trace-panel">
+                        <div class="col-12">
+                            <div class="glass-panel p-4">
+                                <h4 class="mb-4 text-center"><i
+                                        class="fa-solid fa-microscope me-2 text-primary"></i>Résultat de l'expérience
+                                </h4>
+                                <div class="trace-wrapper">
+                                    <div id="trace-container" class="d-none">
+                                        <div id="trace-results-content" class="row g-3">
+                                            <!-- Horizontal cards injected by sim_crypto_logic.js -->
+                                        </div>
+                                    </div>
+
+                                    <div id="trace-empty" class="text-center p-4 text-muted">
+                                        <i class="fa-solid fa-info-circle fa-2x mb-2 opacity-50"></i>
+                                        <p class="mb-0">Démarrez une simulation pour voir les détails cryptographiques
+                                            réels de la communication.</p>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                        <!-- Section: Classification des Risques (Référence de Risque) -->
+                        <div class="container-fluid mt-5 mb-4 px-0">
+                            <div class="glass-panel p-4">
+                                <div class="text-center mb-4">
+                                    <h3 class="risk-title-main">
+                                        <i class="fa-solid fa-triangle-exclamation text-primary"></i> Classification des
+                                        Risques de Sécurité
+                                    </h3>
+                                </div>
+                                <div class="row g-3">
+                                    <!-- Faible -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <div class="risk-card risk-faible h-100 p-3">
+                                            <h5 class="risk-title mb-3">
+                                                <span
+                                                    class="badge bg-success-transparent text-success risk-badge py-1 px-3">Faible</span>
+                                            </h5>
+                                            <ul class="small mb-0" style="line-height: 1.6;">
+                                                <li>Eve intercepte les données, mais ne peut pas les lire;</li>
+                                                <li>les modifications sont détectées;</li>
+                                                <li>les clés sont fortes et secrètes;</li>
+                                                <li>les clés publiques sont vérifiées.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <!-- Moyen -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <div class="risk-card risk-moyen h-100 p-3">
+                                            <h5 class="risk-title mb-3">
+                                                <span
+                                                    class="badge bg-warning-transparent text-warning risk-badge py-1 px-3">Moyen</span>
+                                            </h5>
+                                            <ul class="small mb-0" style="line-height: 1.6;">
+                                                <li>une mauvaise configuration peut faciliter une attaque;</li>
+                                                <li>une clé ou une valeur utilisée est prévisible;</li>
+                                                <li>certaines informations sont accessibles à Eve.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <!-- Élevé -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <div class="risk-card risk-eleve h-100 p-3">
+                                            <h5 class="risk-title mb-3">
+                                                <span
+                                                    class="badge bg-orange-transparent text-orange risk-badge py-1 px-3">Élevé</span>
+                                            </h5>
+                                            <ul class="small mb-0" style="line-height: 1.6;">
+                                                <li>une clé faible est utilisée;</li>
+                                                <li>une clé publique n’est pas vérifiée;</li>
+                                                <li>l’intégrité n’est pas protégée;</li>
+                                                <li>Eve peut tenter un nombre limité de possibilités.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <!-- Critique -->
+                                    <div class="col-12 col-md-6 col-lg-3">
+                                        <div class="risk-card risk-critique h-100 p-3">
+                                            <h5 class="risk-title mb-3">
+                                                <span
+                                                    class="badge bg-danger-transparent text-danger risk-badge py-1 px-3">Critique</span>
+                                            </h5>
+                                            <ul class="small mb-0" style="line-height: 1.6;">
+                                                <li>Eve possède la clé secrète ou privée;</li>
+                                                <li>Eve peut lire le message;</li>
+                                                <li>Eve réussit une attaque MITM;</li>
+                                                <li>Eve peut modifier le message sans être détectée;</li>
+                                                <li>Eve peut se faire passer pour Alice ou Bob.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Tableau Comparatif Obligatoire -->
+                        <div class="container-fluid mt-5 mb-4 px-0">
+                            <div class="glass-panel p-4">
+                                <div class="text-center mb-4">
+                                    <h3 class="risk-title-main">
+                                        <i class="fa-solid fa-table text-primary"></i>Tableau Comparatif Obligatoire des
+                                        Méthodes
+                                    </h3>
+                                </div>
+                                <div class="table-container">
+                                    <table class="comparative-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Méthode</th>
+                                                <th>Fonction principale</th>
+                                                <th>Eve peut-elle déchiffrer ou retrouver le message?</th>
+                                                <th>Condition permettant à Eve de réussir</th>
+                                                <th>Niveau de risque</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="fw-bold text-primary"><i
+                                                        class="fa-solid fa-key text-primary me-2"></i>AES</td>
+                                                <td class="text-light">Confidentialité</td>
+                                                <td class="text-light">Non, sans la clé secrète</td>
+                                                <td class="text-light">Obtenir ou deviner la clé</td>
+                                                <td><span
+                                                        class="badge bg-warning-transparent text-warning py-1 px-3">Faible
+                                                        à critique</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold text-info"><i
+                                                        class="fa-solid fa-user-shield text-info me-2"></i>RSA</td>
+                                                <td class="text-light">Confidentialité et protection des clés</td>
+                                                <td class="text-light">Non, sans la clé privée</td>
+                                                <td class="text-light">Vol de clé ou attaque MITM</td>
+                                                <td><span
+                                                        class="badge bg-warning-transparent text-warning py-1 px-3">Faible
+                                                        à critique</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold text-warning"><i
+                                                        class="fa-solid fa-hashtag text-warning me-2"></i>SHA-256</td>
+                                                <td class="text-light">Intégrité</td>
+                                                <td class="text-light">Il n’y a pas de déchiffrement</td>
+                                                <td class="text-light">Deviner une valeur faible</td>
+                                                <td><span
+                                                        class="badge bg-orange-transparent text-orange py-1 px-3">Faible
+                                                        à
+                                                        élevé</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold text-success"><i
+                                                        class="fa-solid fa-file-signature text-success me-2"></i>Signature
+                                                    numérique</td>
+                                                <td class="text-light">Authenticité et intégrité</td>
+                                                <td class="text-light">Le message peut rester visible</td>
+                                                <td class="text-light">Vol de la clé privée ou substitution de clé
+                                                    publique
+                                                </td>
+                                                <td><span
+                                                        class="badge bg-warning-transparent text-warning py-1 px-3">Faible
+                                                        à critique</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+    </main>
+
+    <!-- Pied de page professionnel (Footer) -->
+    <footer class="footer mt-5 py-4" style="background: rgba(10, 15, 30, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255, 255, 255, 0.08); font-family: var(--font-ui); color: #94a3b8;">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <!-- Course Info -->
+                <div class="col-12 col-md-4 text-center text-md-start">
+                    <h5 class="fw-bold mb-1" style="color: var(--color-primary); font-size: 0.95rem;">
+                        <i class="fa-solid fa-graduation-cap me-2"></i>Sécurité Informatique & Cryptographie
+                    </h5>
+                    <p class="text-secondary small mb-0" style="font-size: 0.8rem; color: #64748b !important;">Module d'Étude des Protocoles de Chiffrement</p>
+                </div>
+                <!-- Educational purpose -->
+                <div class="col-12 col-md-4 text-center text-secondary small">
+                    <div class="d-inline-block px-3 py-1 rounded-pill" style="background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.15); color: #0df; font-size: 0.8rem;">
+                        <i class="fa-solid fa-laptop-code me-2"></i>Développé pour un usage éducatif
+                    </div>
+                    <p class="text-secondary mt-2 mb-0" style="font-size: 0.72rem; color: #64748b !important;">Simulation interactive d'attaques MITM</p>
+                </div>
+                <!-- Participants -->
+                <div class="col-12 col-md-4 text-center text-md-end">
+                    <h6 class="text-light fw-bold mb-1" style="font-size: 0.85rem; color: #e2e8f0;">
+                        <i class="fa-solid fa-users me-2 text-info"></i>Membres du groupe :
+                    </h6>
+                    <p class="small mb-0" style="line-height: 1.5; color: #94a3b8;">
+                        Élève 1 &nbsp;•&nbsp; Élève 2 &nbsp;•&nbsp; Élève 3 &nbsp;•&nbsp; Élève 4
+                    </p>
+                </div>
+            </div>
+            <hr class="my-3" style="border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="row">
+                <div class="col-12 text-center small" style="font-size: 0.72rem; color: #475569;">
+                    © 2026 CryptoSim Laboratory. Conception et simulation de protocoles de sécurité. Tous droits réservés.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modale d'aide ou de réussite pour copier -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+        <div id="copy-toast" class="toast align-items-center text-white bg-info border-0" role="alert"
+            aria-live="assertive" aria-atomic="true" data-bs-delay="2000">
+            <div class="d-flex">
+                <div class="toast-body fw-bold">
+                    <i class="bi bi-check-circle-fill me-2"></i> Copié dans le presse-papiers !
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Application JS -->
+    <script src="app.js?v=1.0.1"></script>
+    <script src="sim_crypto_logic.js?v=1.0.0"></script>
+    <!-- Filter Logic Script -->
+    <script>
+        // Disable scroll restoration and force scroll to top immediately
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.scrollTo(0, 0);
+            const encryptTab = document.getElementById('encrypt-tab');
+            const decryptTab = document.getElementById('decrypt-tab');
+
+            const updateTabLabels = (algo) => {
+                if (!encryptTab || !decryptTab) return;
+                if (algo === 'sha') {
+                    encryptTab.innerHTML = '<i class="fa-solid fa-lock me-1"></i> Empreinte';
+                    decryptTab.innerHTML = '<i class="fa-solid fa-lock-open me-1"></i> Valider';
+                } else if (algo === 'sig') {
+                    encryptTab.innerHTML = '<i class="fa-solid fa-lock me-1"></i> Signer';
+                    decryptTab.innerHTML = '<i class="fa-solid fa-lock-open me-1"></i> Valider';
+                } else {
+                    encryptTab.innerHTML = '<i class="fa-solid fa-lock me-1"></i> Chiffrement';
+                    decryptTab.innerHTML = '<i class="fa-solid fa-lock-open me-1"></i> Déchiffrement';
+                }
+            };
+
+            // Set initial active state
+            document.body.setAttribute('data-active-algo', 'aes');
+            updateTabLabels('aes');
+
+            // Handle algorithm filter button clicks
+            const filterButtons = document.querySelectorAll('#algoFilterGroup .filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active class from all filter buttons
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    btn.classList.add('active');
+                    // Update active algorithm filter attribute on body
+                    const algo = btn.getAttribute('data-algo-filter');
+                    document.body.setAttribute('data-active-algo', algo);
+                    updateTabLabels(algo);
+                });
+            });
+
+            // Track tab changes to show/hide algorithm filter bar accordingly
+            const tabs = document.querySelectorAll('#mainTab button[data-bs-toggle="tab"]');
+
+            const updateActiveTabAttr = (activeTabEl) => {
+                if (activeTabEl) {
+                    const targetId = activeTabEl.getAttribute('data-bs-target').replace('#', '');
+                    document.body.setAttribute('data-active-tab', targetId);
+                }
+            };
+
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', (event) => {
+                    updateActiveTabAttr(event.target);
+                });
+            });
+
+            // Run initial check
+            const initialActiveTab = document.querySelector('#mainTab button.active');
+            updateActiveTabAttr(initialActiveTab);
+        });
+    </script>
+</body>
+
+</html>
