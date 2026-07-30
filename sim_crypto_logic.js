@@ -219,7 +219,6 @@ window.startSimulation = async function() {
     if (simulationStepCount === 1) {
         document.getElementById("mitm-logs").innerHTML = "";
         clearActorConsoles();
-        updateResultsCard(null, true);
     }
     resetActorCards();
 
@@ -1104,6 +1103,8 @@ window.resumeFromEveBackward = async function(sc = null) {
                     btnStart.disabled = false;
                     setMitMInputAuthor("Alice", false, "");
                     isSimulationRunning = false;
+                    isSimulationActive = false;
+                    simulationStepCount = 0;
                     currentDirection = "forward";
                 }, 800);
             }, 3000);

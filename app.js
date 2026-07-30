@@ -1602,6 +1602,9 @@ function updateScenarioDescription() {
             <div class="mb-1">${expectedResultHtml}</div>
             ${riskHtml}
         `;
+        if (typeof updateResultsCard === "function") {
+            updateResultsCard(sc);
+        }
     }
 }
 
@@ -1735,7 +1738,6 @@ function startSimulation() {
     if (simulationStepCount === 1) {
         document.getElementById("mitm-logs").innerHTML = "";
         clearActorConsoles();
-        updateResultsCard(null, true);
     }
     resetActorCards();
 
@@ -2393,7 +2395,7 @@ function resetSimulation() {
     if (msgInput) msgInput.value = "";
 
     resetActorCards();
-    updateResultsCard(null, true);
+    updateScenarioDescription();
     resetAvatarShadows();
     clearActorConsoles();
     setMitMInputAuthor("Alice", false, "");
